@@ -1,0 +1,4 @@
+﻿  main.cpp
+c:\users\geoff\projects\pathplanning\path\main.cpp(15): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
+  path.vcxproj -> C:\Users\geoff\Projects\PathPlanning\Debug\path.exe
+  path.vcxproj -> C:\Users\geoff\Projects\PathPlanning\Debug\path.pdb (Partial PDB)
