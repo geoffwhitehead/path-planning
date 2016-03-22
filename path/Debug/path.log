@@ -1,4 +1,14 @@
 ﻿  main.cpp
-c:\users\geoff\projects\pathplanning\path\main.cpp(15): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
-  path.vcxproj -> C:\Users\geoff\Projects\PathPlanning\Debug\path.exe
-  path.vcxproj -> C:\Users\geoff\Projects\PathPlanning\Debug\path.pdb (Partial PDB)
+c:\users\geoff\projects\pathplanning\path\node.h(18): warning C4099: 'Node': type name first seen using 'struct' now seen using 'class'
+  c:\users\geoff\projects\pathplanning\path\node.h(18): note: see declaration of 'Node'
+c:\users\geoff\projects\pathplanning\path\main.cpp(23): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
+c:\users\geoff\projects\pathplanning\path\main.cpp(127): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(268): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(269): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(278): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(294): warning C4018: '<': signed/unsigned mismatch
+  Generating Code...
+c:\users\geoff\projects\pathplanning\path\node.h(38): warning C4717: 'operator<<': recursive on all control paths, function will cause runtime stack overflow
+  Skipping... (no relevant changes detected)
+  Node.cpp
+LINK : fatal error LNK1168: cannot open C:\Users\geoff\Projects\PathPlanning\Debug\path.exe for writing
