@@ -9,29 +9,42 @@
 #include <map>
 #include <algorithm>
 #include <assert.h>
+#include "MyEventReceiver.h"
 
-#define NODE_SIZE 0.5
+#define NODE_SIZE 0.3
 #define EDGES 3
 #define PATH_FOUND 0
 #define NO_PATH 1
-
+#define TB_X 0
+#define TB_Y 1
+#define TB_Z 2
+int TB = NULL;
+float func = (1 + sqrt(5)) / 2;
 using namespace irr;
 using namespace core;
 using namespace scene;
 using namespace video;
 using namespace gui;
 
+// functions
 void createNodes();
+void createEdges();
+void printNodes();
 void run();
-void shortestPath(Node* origin, Node* target);
-void printPath(Node* origin, Node* target);
+vector<Node*> shortestPath(Node* origin, Node* target);
+void printPath(Node* origin, Node* node_ptr, vector<Node*>);
 int aStar(std::map<Node*, Node*>* open_list, std::map<Node*, Node*>* closed_list, Node* current, Node* target);
+Node* nextNode(std::map<Node*, Node*>* open_list, Node* target);
+void determineTieBreak(Node* start, Node* finish);
+void analyseNode(Node* to_node, Node* current, int current_edge, Node* target);
 
+// vars
 std::vector<Node*> nodes;
+std::vector<Node*> route;
+Node* start;
+Node* finish;
 
-float func() {
-	return (1 + sqrt(5)) / 2;
-}
+// This is the one method that we have to implement
 
 int main() {
 	
@@ -40,9 +53,9 @@ int main() {
 	UseHighLevelShaders = true;
 	UseCgShaders = true;
 	video::E_DRIVER_TYPE driverType = EDT_OPENGL;
-	
+	MyEventReceiver receiver;
 	// create device
-	device = createDevice(driverType, core::dimension2d<u32>(640, 480));
+	device = createDevice(driverType, core::dimension2d<u32>(1024, 768), 16, false, false, false, &receiver);
 
 	if (device == 0)
 		return 1; // could not create selected driver.
@@ -50,10 +63,10 @@ int main() {
 	video::IVideoDriver* driver = device->getVideoDriver();
 	scene::ISceneManager* smgr = device->getSceneManager();
 	gui::IGUIEnvironment* gui = device->getGUIEnvironment();
+	
 
 	// Make sure we don't try Cg without support for it
-	if (UseCgShaders && !driver->queryFeature(video::EVDF_CG))
-	{
+	if (UseCgShaders && !driver->queryFeature(video::EVDF_CG)) {
 		printf("Warning: No Cg support, disabling.\n");
 		UseCgShaders = false;
 	}
@@ -130,30 +143,34 @@ int main() {
 		mc->drop();
 	}
 
-	// create test scene node 2, with the new created material type 2
+	// **** CREATE NODES
 	for (int i = 0; i < nodes.size(); i++)
 	{
-		scene::ISceneNode* node = smgr->addCubeSceneNode(NODE_SIZE);
+		scene::ISceneNode* node = smgr->addSphereSceneNode(NODE_SIZE, 32, 0, i);
 		node->setPosition(nodes[i]->pos);
 		//node->setPosition(core::vector3df(0, -10, 50));
 		node->setMaterialTexture(0, driver->getTexture("../_resources/irrlicht-1.8.3/media/wall.bmp"));
 		node->setMaterialFlag(video::EMF_LIGHTING, false);
 		node->setMaterialFlag(video::EMF_BLEND_OPERATION, true);
-		node->setMaterialType((video::E_MATERIAL_TYPE)newMaterialType2);
+		node->setMaterialType((video::E_MATERIAL_TYPE)newMaterialType1);
+		
+		smgr->addTextSceneNode(gui->getBuiltInFont(), std::to_wstring(nodes[i]->name).c_str(),
+			video::SColor(255, 255, 255, 255), node, vector3df(0.0f, 0.0f, 0.4f));
 
-		smgr->addTextSceneNode(gui->getBuiltInFont(), std::to_wstring(i).c_str(),
-			video::SColor(255, 255, 255, 255), node);
+		// ROTATION
+		//scene::ISceneNodeAnimator* anim = smgr->createRotationAnimator(core::vector3df(0.0, 0.0, 0.0));
+		//node->addAnimator(anim);
+		//anim->drop();
 
-		scene::ISceneNodeAnimator* anim = smgr->createRotationAnimator(core::vector3df(0, 0.3f, 0));
-		node->addAnimator(anim);
-		anim->drop();
 	}
-	
+
+
+	// *****
 
 	// add a nice skybox
 
 	driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, false);
-
+	
 	smgr->addSkyBoxSceneNode(
 		driver->getTexture("../_resources/irrlicht-1.8.3/media/irrlicht2_up.jpg"),
 		driver->getTexture("../_resources/irrlicht-1.8.3/media/irrlicht2_dn.jpg"),
@@ -171,14 +188,60 @@ int main() {
 	cam->setTarget(core::vector3df(0, 0, 0));
 	device->getCursorControl()->setVisible(false);
 
+	video::S3DVertex Vertices[4];
+	video::SMaterial Material;
+
+	//driver->setMaterial(Material);
+
 	int lastFPS = -1;
 
+	const f32 MOVEMENT_SPEED = 5.f;
+
+	u32 then = device->getTimer()->getTime();
+
+	
 	while (device->run())
 		if (device->isWindowActive())
 		{
-			driver->beginScene(true, true, video::SColor(255, 0, 0, 0));
+
+			// Work out a frame delta time.
+			const u32 now = device->getTimer()->getTime();
+			const f32 frameDeltaTime = (f32)(now - then) / 1000.f; // Time in seconds
+			then = now;
+
+			vector3df camPosition = cam->getPosition();
+
+			if (receiver.IsKeyDown(irr::KEY_KEY_W))
+				cam->setPosition(vector3df(camPosition.X, camPosition.Y, camPosition.Z -= MOVEMENT_SPEED * frameDeltaTime));
+			else if (receiver.IsKeyDown(irr::KEY_KEY_S))
+				cam->setPosition(vector3df(camPosition.X , camPosition.Y, camPosition.Z += MOVEMENT_SPEED * frameDeltaTime));
+
+			if (receiver.IsKeyDown(irr::KEY_KEY_A))
+				cam->setPosition(vector3df(camPosition.X += MOVEMENT_SPEED * frameDeltaTime, camPosition.Y, camPosition.Z));
+			else if (receiver.IsKeyDown(irr::KEY_KEY_D))
+				cam->setPosition(vector3df(camPosition.X -= MOVEMENT_SPEED * frameDeltaTime, camPosition.Y, camPosition.Z));
+			
+			/////////BEGIN
+			driver->beginScene(true, true, video::SColor(0, 100, 100, 100));
 			smgr->drawAll();
+			
+			driver->setTransform(ETS_WORLD, matrix4());
+			
+			// ***** EDGES
+			for (int i = 0; i < nodes.size(); i++) {
+				for (int j = 0; j < nodes[i]->edges.size(); j++) {
+					driver->draw3DLine(nodes[i]->pos, nodes[i]->edges[j].to_node->pos, SColor(255, 125, 20, 125));
+				}
+			}
+			
+			for (int i = 0; i < route.size(); i++) {
+				smgr->getSceneNodeFromId(route[i]->name)->setMaterialTexture(0, driver->getTexture("../_resources/irrlicht-1.8.3/media/portal2.bmp"));
+				smgr->getSceneNodeFromId(route[i]->name)->setMaterialFlag(video::EMF_BLEND_OPERATION, false);
+				smgr->getSceneNodeFromId(route[i]->name)->setMaterialFlag(video::EMF_LIGHTING, false);
+
+			}
 			driver->endScene();
+			/////////ENND
 
 			int fps = driver->getFPS();
 			if (lastFPS != fps)
@@ -192,85 +255,104 @@ int main() {
 				lastFPS = fps;
 			}
 		}
-
 	device->drop();
-
 	return 0;
 }
 
 void run() {
 
 	createNodes();
-	shortestPath(nodes[1], nodes[10]);
+	createEdges();
+	printNodes();
+
+	start = nodes[52];
+	finish = nodes[32];
+	route = shortestPath(start, finish);
+	
+	if ( route.size() > 0) {
+		cout << "PATH FOUND" << endl;;
+		printPath(start, finish, route);
+	}
+	else {
+		cout << "NO PATH" << endl;
+	}
+	
 }
 
 void createNodes() {
 	
-	nodes.push_back(new Node(vector3df(0, 1, 3 * func())));
-	nodes.push_back(new Node(vector3df(0, 1, -3 * func())));
-	nodes.push_back(new Node(vector3df(0, -1, 3 * func())));
-	nodes.push_back(new Node(vector3df(0, -1, -3 * func())));
-	nodes.push_back(new Node(vector3df(1, 3 * func(), 0)));
-	nodes.push_back(new Node(vector3df(1, -3 * func(), 0)));
-	nodes.push_back(new Node(vector3df(-1, 3 * func(), 0)));
-	nodes.push_back(new Node(vector3df(-1, -3 * func(), 0)));
-	nodes.push_back(new Node(vector3df(3 * func(), 0, 1)));
-	nodes.push_back(new Node(vector3df(3 * func(), 0, -1)));
-	nodes.push_back(new Node(vector3df(-3 * func(), 0, 1)));
-	nodes.push_back(new Node(vector3df(-3 * func(), 0, -1)));
-	nodes.push_back(new Node(vector3df(2, (1 + 2 * func()), func())));
-	nodes.push_back(new Node(vector3df(2, (1 + 2 * func()), -func())));
-	nodes.push_back(new Node(vector3df(2, -(1 + 2 * func()), func())));
-	nodes.push_back(new Node(vector3df(2, -(1 + 2 * func()), -func())));
-	nodes.push_back(new Node(vector3df(-2, (1 + 2 * func()), func())));
-	nodes.push_back(new Node(vector3df(-2, (1 + 2 * func()), -func())));
-	nodes.push_back(new Node(vector3df(-2, -(1 + 2 * func()), func())));
-	nodes.push_back(new Node(vector3df(-2, -(1 + 2 * func()), -func())));
-	nodes.push_back(new Node(vector3df((1 + 2 * func()), func(), 2)));
-	nodes.push_back(new Node(vector3df((1 + 2 * func()), func(), -2)));
-	nodes.push_back(new Node(vector3df((1 + 2 * func()), -func(), 2)));
-	nodes.push_back(new Node(vector3df((1 + 2 * func()), -func(), -2)));
-	nodes.push_back(new Node(vector3df(-(1 + 2 * func()), func(), 2)));
-	nodes.push_back(new Node(vector3df(-(1 + 2 * func()), func(), -2)));
-	nodes.push_back(new Node(vector3df(-(1 + 2 * func()), -func(), 2)));
-	nodes.push_back(new Node(vector3df(-(1 + 2 * func()), -func(), -2)));
-	nodes.push_back(new Node(vector3df(func(), 2, (1 + 2 * func()))));
-	nodes.push_back(new Node(vector3df(func(), 2, -(1 + 2 * func()))));
-	nodes.push_back(new Node(vector3df(func(), -2, (1 + 2 * func()))));
-	nodes.push_back(new Node(vector3df(func(), -2, -(1 + 2 * func()))));
-	nodes.push_back(new Node(vector3df(-func(), 2, (1 + 2 * func()))));
-	nodes.push_back(new Node(vector3df(-func(), 2, -(1 + 2 * func()))));
-	nodes.push_back(new Node(vector3df(-func(), -2, (1 + 2 * func()))));
-	nodes.push_back(new Node(vector3df(-func(), -2, -(1 + 2 * func()))));
-	nodes.push_back(new Node(vector3df(1, (2 + func()), 2 * func())));
-	nodes.push_back(new Node(vector3df(1, (2 + func()), -2 * func())));
-	nodes.push_back(new Node(vector3df(1, -(2 + func()), 2 * func())));
-	nodes.push_back(new Node(vector3df(1, -(2 + func()), -2 * func())));
-	nodes.push_back(new Node(vector3df(-1, (2 + func()), 2 * func())));
-	nodes.push_back(new Node(vector3df(-1, (2 + func()), -2 * func())));
-	nodes.push_back(new Node(vector3df(-1, -(2 + func()), 2 * func())));
-	nodes.push_back(new Node(vector3df(-1, -(2 + func()), -2 * func())));
-	nodes.push_back(new Node(vector3df((2 + func()), 2 * func(), 1)));
-	nodes.push_back(new Node(vector3df((2 + func()), 2 * func(), -1)));
-	nodes.push_back(new Node(vector3df((2 + func()), -2 * func(), 1)));
-	nodes.push_back(new Node(vector3df((2 + func()), -2 * func(), -1)));
-	nodes.push_back(new Node(vector3df(-(2 + func()), 2 * func(), 1)));
-	nodes.push_back(new Node(vector3df(-(2 + func()), 2 * func(), -1)));
-	nodes.push_back(new Node(vector3df(-(2 + func()), -2 * func(), 1)));
-	nodes.push_back(new Node(vector3df(-(2 + func()), -2 * func(), -1)));
-	nodes.push_back(new Node(vector3df(2 * func(), 1, (2 + func()))));
-	nodes.push_back(new Node(vector3df(2 * func(), 1, -(2 + func()))));
-	nodes.push_back(new Node(vector3df(2 * func(), -1, (2 + func()))));
-	nodes.push_back(new Node(vector3df(2 * func(), -1, -(2 + func()))));
-	nodes.push_back(new Node(vector3df(-2 * func(), 1, (2 + func()))));
-	nodes.push_back(new Node(vector3df(-2 * func(), 1, -(2 + func()))));
-	nodes.push_back(new Node(vector3df(-2 * func(), -1, (2 + func()))));
-	nodes.push_back(new Node(vector3df(-2 * func(), -1, -(2 + func()))));
+	nodes.push_back(new Node(vector3df(0, 1, 3 * func)));
+	nodes.push_back(new Node(vector3df(0, 1, -3 * func)));
+	nodes.push_back(new Node(vector3df(0, -1, 3 * func)));
+	nodes.push_back(new Node(vector3df(0, -1, -3 * func)));
+	nodes.push_back(new Node(vector3df(1, 3 * func, 0)));
+	nodes.push_back(new Node(vector3df(1, -3 * func, 0)));
+	nodes.push_back(new Node(vector3df(-1, 3 * func, 0)));
+	nodes.push_back(new Node(vector3df(-1, -3 * func, 0)));
+	nodes.push_back(new Node(vector3df(3 * func, 0, 1)));
+	nodes.push_back(new Node(vector3df(3 * func, 0, -1)));
+	nodes.push_back(new Node(vector3df(-3 * func, 0, 1)));
+	nodes.push_back(new Node(vector3df(-3 * func, 0, -1)));
+	nodes.push_back(new Node(vector3df(2, (1 + 2 * func), func)));
+	nodes.push_back(new Node(vector3df(2, (1 + 2 * func), -func)));
+	nodes.push_back(new Node(vector3df(2, -(1 + 2 * func), func)));
+	nodes.push_back(new Node(vector3df(2, -(1 + 2 * func), -func)));
+	nodes.push_back(new Node(vector3df(-2, (1 + 2 * func), func)));
+	nodes.push_back(new Node(vector3df(-2, (1 + 2 * func), -func)));
+	nodes.push_back(new Node(vector3df(-2, -(1 + 2 * func), func)));
+	nodes.push_back(new Node(vector3df(-2, -(1 + 2 * func), -func)));
+	nodes.push_back(new Node(vector3df((1 + 2 * func), func, 2)));
+	nodes.push_back(new Node(vector3df((1 + 2 * func), func, -2)));
+	nodes.push_back(new Node(vector3df((1 + 2 * func), -func, 2)));
+	nodes.push_back(new Node(vector3df((1 + 2 * func), -func, -2)));
+	nodes.push_back(new Node(vector3df(-(1 + 2 * func), func, 2)));
+	nodes.push_back(new Node(vector3df(-(1 + 2 * func), func, -2)));
+	nodes.push_back(new Node(vector3df(-(1 + 2 * func), -func, 2)));
+	nodes.push_back(new Node(vector3df(-(1 + 2 * func), -func, -2)));
+	nodes.push_back(new Node(vector3df(func, 2, (1 + 2 * func))));
+	nodes.push_back(new Node(vector3df(func, 2, -(1 + 2 * func))));
+	nodes.push_back(new Node(vector3df(func, -2, (1 + 2 * func))));
+	nodes.push_back(new Node(vector3df(func, -2, -(1 + 2 * func))));
+	nodes.push_back(new Node(vector3df(-func, 2, (1 + 2 * func))));
+	nodes.push_back(new Node(vector3df(-func, 2, -(1 + 2 * func))));
+	nodes.push_back(new Node(vector3df(-func, -2, (1 + 2 * func))));
+	nodes.push_back(new Node(vector3df(-func, -2, -(1 + 2 * func))));
+	nodes.push_back(new Node(vector3df(1, (2 + func), 2 * func)));
+	nodes.push_back(new Node(vector3df(1, (2 + func), -2 * func)));
+	nodes.push_back(new Node(vector3df(1, -(2 + func), 2 * func)));
+	nodes.push_back(new Node(vector3df(1, -(2 + func), -2 * func)));
+	nodes.push_back(new Node(vector3df(-1, (2 + func), 2 * func)));
+	nodes.push_back(new Node(vector3df(-1, (2 + func), -2 * func)));
+	nodes.push_back(new Node(vector3df(-1, -(2 + func), 2 * func)));
+	nodes.push_back(new Node(vector3df(-1, -(2 + func), -2 * func)));
+	nodes.push_back(new Node(vector3df((2 + func), 2 * func, 1)));
+	nodes.push_back(new Node(vector3df((2 + func), 2 * func, -1)));
+	nodes.push_back(new Node(vector3df((2 + func), -2 * func, 1)));
+	nodes.push_back(new Node(vector3df((2 + func), -2 * func, -1)));
+	nodes.push_back(new Node(vector3df(-(2 + func), 2 * func, 1)));
+	nodes.push_back(new Node(vector3df(-(2 + func), 2 * func, -1)));
+	nodes.push_back(new Node(vector3df(-(2 + func), -2 * func, 1)));
+	nodes.push_back(new Node(vector3df(-(2 + func), -2 * func, -1)));
+	nodes.push_back(new Node(vector3df(2 * func, 1, (2 + func))));
+	nodes.push_back(new Node(vector3df(2 * func, 1, -(2 + func))));
+	nodes.push_back(new Node(vector3df(2 * func, -1, (2 + func))));
+	nodes.push_back(new Node(vector3df(2 * func, -1, -(2 + func))));
+	nodes.push_back(new Node(vector3df(-2 * func, 1, (2 + func))));
+	nodes.push_back(new Node(vector3df(-2 * func, 1, -(2 + func))));
+	nodes.push_back(new Node(vector3df(-2 * func, -1, (2 + func))));
+	nodes.push_back(new Node(vector3df(-2 * func, -1, -(2 + func))));
 
+	for (int i = 0; i < nodes.size(); i++){
+		nodes[i]->name = i;
+	}
+
+}
+
+void createEdges() {
 	// for all nodes
-	for (int node_from = 0; node_from < nodes.size(); node_from++){
+	for (int node_from = 0; node_from < nodes.size(); node_from++) {
 		// for all nodes
-		for (int node_to = 0; node_to < nodes.size(); node_to++){
+		for (int node_to = 0; node_to < nodes.size(); node_to++) {
 			// if the nodes are not the same object
 			if (node_from != node_to) {
 				// calculate the distance between the two nodes
@@ -285,7 +367,7 @@ void createNodes() {
 					int max_index = 0;
 					float max_cost = nodes[node_from]->edges[0].cost;
 					// for all edges of the node excluding the first  (this has already been considered as the default)
-					for (int edge = 1; edge < nodes[node_from]->edges.size(); edge++){
+					for (int edge = 1; edge < nodes[node_from]->edges.size(); edge++) {
 						// if the edge cost is greater than the maximum; record the index and max cost
 						if (nodes[node_from]->edges[edge].cost > max_cost) {
 							max_index = edge;
@@ -302,31 +384,68 @@ void createNodes() {
 			}
 		}
 	}
+}
 
-	for (int i = 0; i < nodes.size(); i++){
-		cout << "Node " << i << " {" << nodes[i] << "} {" << *nodes[i] << "}" << endl;
+void printNodes() {
+
+	for (int i = 0; i < nodes.size(); i++) {
+		cout << "Node " << nodes[i]->name << " {" << nodes[i] << "} {" << *nodes[i] << "}" << endl;
 	}
 }
 
-void shortestPath (Node* origin, Node* target) {
+
+vector<Node*> shortestPath (Node* origin, Node* target) {
 	std::map<Node*, Node*> open_list;
 	std::map<Node*, Node*> closed_list;
+	vector<Node*> final_path;
+	vector<Node*> reverse_path;
 
 	Node* current = origin;
 	current->g = 0;
-
 	open_list.insert(std::pair<Node*, Node*>(current, current));
 	
-	if (aStar(&open_list, &closed_list, current, target) == PATH_FOUND)
-		printPath(origin, target);
-	else 
-		cout << "NO PATH" << endl;
-	
+	determineTieBreak(origin, target);
+
+	int route = aStar(&open_list, &closed_list, current, target);
+
+	if (route == PATH_FOUND) {
+		Node* node_ptr = finish;
+		while (node_ptr != start) {
+			final_path.push_back(node_ptr);
+			node_ptr = node_ptr->parent;
+		}
+		final_path.push_back(start);
+
+		return final_path;
+	}
+	else
+		exit(1);
+}
+/*
+void determineTieBreak(Node* start, Node* finish) {
+	float x = start->pos.X - finish->pos.X;
+	float y = start->pos.Y - finish->pos.Y;
+	float z = start->pos.Z - finish->pos.Z;
+
+	int tieBreak = 0;
+
+	if (abs(x) > tieBreak)
+		TB = TB_X;
+
+	if (abs(y) > tieBreak)
+		TB = TB_Y;
+
+	if (abs(z) > tieBreak)
+		TB = TB_Z;
+}
+*/
+void analyseNode(Node* to_node, Node* current, int current_edge, Node* target) {
+	to_node->h = to_node->pos.getDistanceFrom(target->pos);
+	to_node->g = current->g + current->edges[current_edge].cost;
+	to_node->f = to_node->h + to_node->g;
 }
 
 int aStar(std::map<Node*, Node*>* open_list, std::map<Node*, Node*>* closed_list, Node* current, Node* target) {
-	
-	Node* lowest_score = nullptr;
 
 	for (int i = 0; i < EDGES; i++)
 	{
@@ -336,48 +455,60 @@ int aStar(std::map<Node*, Node*>* open_list, std::map<Node*, Node*>* closed_list
 		if (closed_list->count(to_node) == 0 && to_node->passable == true) {
 			if (open_list->count(to_node) == 0) {
 				open_list->insert(std::pair<Node*, Node*>(to_node, current));
-				// fgh
-				to_node->h = to_node->pos.getDistanceFrom(target->pos);
-				to_node->g = current->g + current->edges[i].cost;
-				to_node->f = to_node->h + to_node->g;
+				to_node->parent = current;
+				analyseNode(to_node, current, i, target);
 			}
 			else {
 				float temp_g_score = current->g + current->edges[i].cost;
 				if (temp_g_score < to_node->g) {
-					(*open_list)[to_node] = current;
-					to_node->h = to_node->pos.getDistanceFrom(target->pos);
-					to_node->g = current->g + current->edges[i].cost;
-					to_node->f = to_node->h + to_node->g;
+					analyseNode(to_node, (*open_list)[to_node], i, target);
 				}
 			}
-		}else 
-			cout << "BACKTRACK" << endl;
-		// find the lowest fScore
-	}
-	for (std::map<Node*, Node*>::iterator it = (*open_list).begin(); it != (*open_list).end(); ++it) {
-		if (lowest_score == nullptr)
-			lowest_score = (*open_list).begin()->first;
-		else {
-			if (it->first->f == lowest_score->f)
-				cout << "TIEBREAK NEEDED" << endl;
-			else
-				if (it->first->f < lowest_score->f)
-					lowest_score = it->first;
 		}
+		// else ignore, this node already been evaluated
 	}
-	// remove the evaluated node from the open list and insert into closed list
+	
 	std::map<Node*, Node*>::iterator it;
+	// find the current node being evaluated
 	it = (*open_list).find(current);
-	if (it == (*open_list).end()) exit(1);
+	// move the current node to the closed list so that it isnt evaluated further
 	(*closed_list).insert(std::pair<Node*, Node*>(it->first, it->second));
+	// if the current node is equal to the target node -- path found
 	if (it->first == target) return PATH_FOUND;
+	// remove current node form open list so that it isnt evaluated again
 	(*open_list).erase(it);
+	// if there are now no nodes left in the open list, it means that there is no path from current node to target node: exit algorithm
 	if ((*open_list).size() == 0) return NO_PATH;
-	aStar(open_list, closed_list, lowest_score, target);
+	// call the function again with the node that has the lowest f score in the open list
+	
+	aStar(open_list, closed_list, nextNode(open_list, target), target);
 }
 
-void printPath(Node* origin, Node* target) {
-	if (origin != target)
-		printPath(origin, target->parent);
-	cout << *target;
+Node* nextNode(std::map<Node*, Node*>* open_list, Node* target) {
+	Node* lowest_score = (*open_list).begin()->first;
+	for (std::map<Node*, Node*>::iterator it = (*open_list).begin(); it != (*open_list).end(); ++it) {
+		switch (TB) {
+		case TB_X:
+			if (abs(it->first->pos.X - target->pos.X) < abs(lowest_score->pos.X - target->pos.X))
+				lowest_score = it->first;
+			break;
+		case TB_Y:
+			if (abs(it->first->pos.Y - target->pos.Y) < abs(lowest_score->pos.Y - target->pos.Y))
+				lowest_score = it->first;
+			break;
+		case TB_Z:
+			if (abs(it->first->pos.Z - target->pos.Z) < abs(lowest_score->pos.Z - target->pos.Z))
+				lowest_score = it->first;
+			break;
+		
+		}
+	}
+	return lowest_score;
+}
+
+void printPath(Node* origin, Node* node_ptr, vector<Node*> path) {
+	
+	for (int i = 0; i < path.size(); i++){
+		cout << i << endl;
+	}
 }

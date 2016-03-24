@@ -1,16 +1,18 @@
 ﻿  main.cpp
 c:\users\geoff\projects\pathplanning\path\node.h(19): warning C4099: 'Node': type name first seen using 'struct' now seen using 'class'
   c:\users\geoff\projects\pathplanning\path\node.h(19): note: see declaration of 'Node'
-c:\users\geoff\projects\pathplanning\path\main.cpp(33): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
-c:\users\geoff\projects\pathplanning\path\main.cpp(134): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(271): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(273): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(288): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(306): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(340): warning C4244: '=': conversion from 'irr::f32' to 'int', possible loss of data
-c:\users\geoff\projects\pathplanning\path\main.cpp(341): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-c:\users\geoff\projects\pathplanning\path\main.cpp(348): warning C4244: '=': conversion from 'irr::f32' to 'int', possible loss of data
-c:\users\geoff\projects\pathplanning\path\main.cpp(349): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-c:\users\geoff\projects\pathplanning\path\main.cpp(377): warning C4715: 'aStar': not all control paths return a value
+c:\users\geoff\projects\pathplanning\path\main.cpp(22): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+c:\users\geoff\projects\pathplanning\path\main.cpp(147): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(149): warning C4305: 'argument': truncation from 'double' to 'irr::f32'
+c:\users\geoff\projects\pathplanning\path\main.cpp(231): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(232): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(237): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(345): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(353): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(355): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(370): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(391): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(514): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(485): warning C4715: 'aStar': not all control paths return a value
   path.vcxproj -> C:\Users\geoff\Projects\PathPlanning\Debug\path.exe
   path.vcxproj -> C:\Users\geoff\Projects\PathPlanning\Debug\path.pdb (Partial PDB)

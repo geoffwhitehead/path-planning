@@ -19,18 +19,16 @@ struct Edge {
 class Node {
 
 public:
-	Node(vector3df);
+	Node(vector3df v);
 	vector3df pos;
-	int h;
-	int g;
-	int f;
+	float h;
+	float g;
+	float f;
 	Node* parent;
 	std::vector<Edge> edges;
 	bool passable = true;
-
-	friend ostream &operator<<(ostream &output,
-		const Node N)
-	{
+	int name;
+	friend ostream &operator<<(ostream &output, const Node N){
 		output
 			<< "Node 1:"
 			<< " Edge 1: " << N.edges[0].to_node << " Cost " << N.edges[0].cost

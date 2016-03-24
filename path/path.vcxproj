@@ -122,6 +122,7 @@
     <ClCompile Include="Node.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MyEventReceiver.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="ShaderCallback.h" />
   </ItemGroup>

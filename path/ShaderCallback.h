@@ -57,9 +57,7 @@ public:
 		else
 			services->setVertexShaderConstant(reinterpret_cast<f32*>(&pos), 8, 1);
 
-		// set light color
-
-		video::SColorf col(0.0f, 1.0f, 1.0f, 0.0f);
+		video::SColorf col(0.0f, 0.4f, 0.8f, 0.5f);
 
 		if (UseHighLevelShaders)
 			services->setVertexShaderConstant("mLightColor",
