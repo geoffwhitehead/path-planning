@@ -12,7 +12,7 @@ c:\users\geoff\projects\pathplanning\path\main.cpp(353): warning C4018: '<': sig
 c:\users\geoff\projects\pathplanning\path\main.cpp(355): warning C4018: '<': signed/unsigned mismatch
 c:\users\geoff\projects\pathplanning\path\main.cpp(370): warning C4018: '<': signed/unsigned mismatch
 c:\users\geoff\projects\pathplanning\path\main.cpp(391): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(514): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(500): warning C4018: '<': signed/unsigned mismatch
 c:\users\geoff\projects\pathplanning\path\main.cpp(485): warning C4715: 'aStar': not all control paths return a value
   path.vcxproj -> C:\Users\geoff\Projects\PathPlanning\Debug\path.exe
   path.vcxproj -> C:\Users\geoff\Projects\PathPlanning\Debug\path.pdb (Partial PDB)

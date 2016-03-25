@@ -35,7 +35,7 @@ vector<Node*> shortestPath(Node* origin, Node* target);
 void printPath(Node* origin, Node* node_ptr, vector<Node*>);
 int aStar(std::map<Node*, Node*>* open_list, std::map<Node*, Node*>* closed_list, Node* current, Node* target);
 Node* nextNode(std::map<Node*, Node*>* open_list, Node* target);
-void determineTieBreak(Node* start, Node* finish);
+//void determineTieBreak(Node* start, Node* finish);
 void analyseNode(Node* to_node, Node* current, int current_edge, Node* target);
 
 // vars
@@ -259,14 +259,15 @@ int main() {
 	return 0;
 }
 
+
 void run() {
 
 	createNodes();
 	createEdges();
 	printNodes();
 
-	start = nodes[52];
-	finish = nodes[32];
+	start = nodes[0];
+	finish = nodes[1];
 	route = shortestPath(start, finish);
 	
 	if ( route.size() > 0) {
@@ -404,7 +405,7 @@ vector<Node*> shortestPath (Node* origin, Node* target) {
 	current->g = 0;
 	open_list.insert(std::pair<Node*, Node*>(current, current));
 	
-	determineTieBreak(origin, target);
+	//determineTieBreak(origin, target);
 
 	int route = aStar(&open_list, &closed_list, current, target);
 
@@ -485,23 +486,12 @@ int aStar(std::map<Node*, Node*>* open_list, std::map<Node*, Node*>* closed_list
 }
 
 Node* nextNode(std::map<Node*, Node*>* open_list, Node* target) {
+	assert((*open_list).size() > 0);
+	// TODO check for empty open list 
 	Node* lowest_score = (*open_list).begin()->first;
 	for (std::map<Node*, Node*>::iterator it = (*open_list).begin(); it != (*open_list).end(); ++it) {
-		switch (TB) {
-		case TB_X:
-			if (abs(it->first->pos.X - target->pos.X) < abs(lowest_score->pos.X - target->pos.X))
-				lowest_score = it->first;
-			break;
-		case TB_Y:
-			if (abs(it->first->pos.Y - target->pos.Y) < abs(lowest_score->pos.Y - target->pos.Y))
-				lowest_score = it->first;
-			break;
-		case TB_Z:
-			if (abs(it->first->pos.Z - target->pos.Z) < abs(lowest_score->pos.Z - target->pos.Z))
-				lowest_score = it->first;
-			break;
-		
-		}
+		if (it->first->f < lowest_score->f)
+			lowest_score = it->first;
 	}
 	return lowest_score;
 }
