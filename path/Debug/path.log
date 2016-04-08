@@ -7,12 +7,12 @@ c:\users\geoff\projects\pathplanning\path\main.cpp(149): warning C4305: 'argumen
 c:\users\geoff\projects\pathplanning\path\main.cpp(231): warning C4018: '<': signed/unsigned mismatch
 c:\users\geoff\projects\pathplanning\path\main.cpp(232): warning C4018: '<': signed/unsigned mismatch
 c:\users\geoff\projects\pathplanning\path\main.cpp(237): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(345): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(353): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(355): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(370): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(391): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(500): warning C4018: '<': signed/unsigned mismatch
-c:\users\geoff\projects\pathplanning\path\main.cpp(485): warning C4715: 'aStar': not all control paths return a value
+c:\users\geoff\projects\pathplanning\path\main.cpp(346): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(354): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(356): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(371): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(392): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(501): warning C4018: '<': signed/unsigned mismatch
+c:\users\geoff\projects\pathplanning\path\main.cpp(486): warning C4715: 'aStar': not all control paths return a value
   path.vcxproj -> C:\Users\geoff\Projects\PathPlanning\Debug\path.exe
   path.vcxproj -> C:\Users\geoff\Projects\PathPlanning\Debug\path.pdb (Partial PDB)
