@@ -35,8 +35,8 @@ vector<Node*> shortestPath(Node* origin, Node* target);
 void printPath(Node* origin, Node* node_ptr, vector<Node*>);
 int aStar(std::map<Node*, Node*>* open_list, std::map<Node*, Node*>* closed_list, Node* current, Node* target);
 Node* nextNode(std::map<Node*, Node*>* open_list, Node* target);
-//void determineTieBreak(Node* start, Node* finish);
 void analyseNode(Node* to_node, Node* current, int current_edge, Node* target);
+void getInput();
 
 // vars
 std::vector<Node*> nodes;
@@ -44,11 +44,11 @@ std::vector<Node*> route;
 Node* start;
 Node* finish;
 
-// This is the one method that we have to implement
-
+// mostly contains code to render the algorithm on screen. 
+// *** Much of the set up code in main to render on screen was referenced from irrlicht tutorials located here:http://irrlicht.sourceforge.net/docu/pages.html ***
 int main() {
 	
-	run();
+	run(); // run the shortest path algorithm and create a vector of nodes which will be used further down to change the look of those nodes
 
 	UseHighLevelShaders = true;
 	UseCgShaders = true;
@@ -143,32 +143,29 @@ int main() {
 		mc->drop();
 	}
 
-	// **** CREATE NODES
+	// *** create the nodes
 	for (int i = 0; i < nodes.size(); i++)
 	{
+		// nodes
 		scene::ISceneNode* node = smgr->addSphereSceneNode(NODE_SIZE, 32, 0, i);
 		node->setPosition(nodes[i]->pos);
-		//node->setPosition(core::vector3df(0, -10, 50));
-		node->setMaterialTexture(0, driver->getTexture("../_resources/irrlicht-1.8.3/media/wall.bmp"));
+		node->setMaterialTexture(0, driver->getTexture("../_resources/irrlicht-1.8.3/media/fireball.bmp"));
 		node->setMaterialFlag(video::EMF_LIGHTING, false);
 		node->setMaterialFlag(video::EMF_BLEND_OPERATION, true);
-		node->setMaterialType((video::E_MATERIAL_TYPE)newMaterialType1);
+		node->setMaterialType((video::E_MATERIAL_TYPE)newMaterialType2);
 		
+		// node text
 		smgr->addTextSceneNode(gui->getBuiltInFont(), std::to_wstring(nodes[i]->name).c_str(),
 			video::SColor(255, 255, 255, 255), node, vector3df(0.0f, 0.0f, 0.4f));
 
-		// ROTATION
-		//scene::ISceneNodeAnimator* anim = smgr->createRotationAnimator(core::vector3df(0.0, 0.0, 0.0));
-		//node->addAnimator(anim);
-		//anim->drop();
+		 //rotation
+		scene::ISceneNodeAnimator* anim = smgr->createRotationAnimator(core::vector3df(0.0, 0.0, 0.0));
+		node->addAnimator(anim);
+		anim->drop();
 
 	}
 
-
-	// *****
-
-	// add a nice skybox
-
+	// skybox
 	driver->setTextureCreationFlag(video::ETCF_CREATE_MIP_MAPS, false);
 	
 	smgr->addSkyBoxSceneNode(
@@ -195,11 +192,11 @@ int main() {
 
 	int lastFPS = -1;
 
-	const f32 MOVEMENT_SPEED = 5.f;
+	// controls how fast the camera moves on key presses
+	const f32 MOVEMENT_SPEED = 5.0f;
 
 	u32 then = device->getTimer()->getTime();
 
-	
 	while (device->run())
 		if (device->isWindowActive())
 		{
@@ -211,29 +208,32 @@ int main() {
 
 			vector3df camPosition = cam->getPosition();
 
+			// move the camera y axis
 			if (receiver.IsKeyDown(irr::KEY_KEY_W))
 				cam->setPosition(vector3df(camPosition.X, camPosition.Y, camPosition.Z -= MOVEMENT_SPEED * frameDeltaTime));
 			else if (receiver.IsKeyDown(irr::KEY_KEY_S))
 				cam->setPosition(vector3df(camPosition.X , camPosition.Y, camPosition.Z += MOVEMENT_SPEED * frameDeltaTime));
 
+			// move the camera x axis
 			if (receiver.IsKeyDown(irr::KEY_KEY_A))
 				cam->setPosition(vector3df(camPosition.X += MOVEMENT_SPEED * frameDeltaTime, camPosition.Y, camPosition.Z));
 			else if (receiver.IsKeyDown(irr::KEY_KEY_D))
 				cam->setPosition(vector3df(camPosition.X -= MOVEMENT_SPEED * frameDeltaTime, camPosition.Y, camPosition.Z));
 			
-			/////////BEGIN
+			// *** begin 
 			driver->beginScene(true, true, video::SColor(0, 100, 100, 100));
 			smgr->drawAll();
 			
 			driver->setTransform(ETS_WORLD, matrix4());
 			
-			// ***** EDGES
+			// colour in all the edges
 			for (int i = 0; i < nodes.size(); i++) {
 				for (int j = 0; j < nodes[i]->edges.size(); j++) {
 					driver->draw3DLine(nodes[i]->pos, nodes[i]->edges[j].to_node->pos, SColor(255, 125, 20, 125));
 				}
 			}
 			
+			// colour in all the nodes in the path
 			for (int i = 0; i < route.size(); i++) {
 				smgr->getSceneNodeFromId(route[i]->name)->setMaterialTexture(0, driver->getTexture("../_resources/irrlicht-1.8.3/media/portal2.bmp"));
 				smgr->getSceneNodeFromId(route[i]->name)->setMaterialFlag(video::EMF_BLEND_OPERATION, false);
@@ -241,7 +241,7 @@ int main() {
 
 			}
 			driver->endScene();
-			/////////ENND
+			// *** end
 
 			int fps = driver->getFPS();
 			if (lastFPS != fps)
@@ -259,17 +259,21 @@ int main() {
 	return 0;
 }
 
-
+// start the whole algorthm from loading nodes to print out the path
 void run() {
 
+	// load all the nodes into memory
 	createNodes();
+	// load all the edges into memory
 	createEdges();
+	// print nodes into console
 	printNodes();
-
-	start = nodes[0];
-	finish = nodes[1];
+	// get the start and finish node from the user
+	getInput();
+	// calculate the shortest path between the start and finish
 	route = shortestPath(start, finish);
 	
+	// if a path exists, print the path
 	if ( route.size() > 0) {
 		cout << "PATH FOUND" << endl;;
 		printPath(start, finish, route);
@@ -280,6 +284,7 @@ void run() {
 	
 }
 
+// load all the nodes into vector
 void createNodes() {
 	
 	nodes.push_back(new Node(vector3df(0, 1, 3 * func)));
@@ -343,6 +348,7 @@ void createNodes() {
 	nodes.push_back(new Node(vector3df(-2 * func, -1, (2 + func))));
 	nodes.push_back(new Node(vector3df(-2 * func, -1, -(2 + func))));
 
+	// name all the nodes
 	for (int i = 0; i < nodes.size(); i++){
 		nodes[i]->name = i;
 	}
@@ -387,6 +393,7 @@ void createEdges() {
 	}
 }
 
+// DEBUG: print all the nodes ot console
 void printNodes() {
 
 	for (int i = 0; i < nodes.size(); i++) {
@@ -394,58 +401,45 @@ void printNodes() {
 	}
 }
 
+// create some maps to hold the path, run the algorithm for the start and end node
+vector<Node*> shortestPath (Node* start, Node* finish) {
+	std::map<Node*, Node*> open_list; // nodes not yet evaluated
+	std::map<Node*, Node*> closed_list; // nodes evaluated already
+	vector<Node*> final_path; // holds all the nodes that are in the final path
+	vector<Node*> reverse_path;	// final path in reverse order
 
-vector<Node*> shortestPath (Node* origin, Node* target) {
-	std::map<Node*, Node*> open_list;
-	std::map<Node*, Node*> closed_list;
-	vector<Node*> final_path;
-	vector<Node*> reverse_path;
+	// inital g value is 0 because this is the start node
+	start->g = 0;
+	// insert into open list to be evaluated for next hop
+	open_list.insert(std::pair<Node*, Node*>(start, start));
+	// run the algorithm over the remainder of the nodes to calculate the entire path
+	int route = aStar(&open_list, &closed_list, start, finish);
 
-	Node* current = origin;
-	current->g = 0;
-	open_list.insert(std::pair<Node*, Node*>(current, current));
-	
-	//determineTieBreak(origin, target);
-
-	int route = aStar(&open_list, &closed_list, current, target);
-
+	// if path found, work back from end node to start node by iterating through the nodes parents. As this is happening - transfer nodes to vector final path
 	if (route == PATH_FOUND) {
 		Node* node_ptr = finish;
 		while (node_ptr != start) {
 			final_path.push_back(node_ptr);
 			node_ptr = node_ptr->parent;
 		}
+		// add the start node on the end
 		final_path.push_back(start);
 
+		// return the route to be printed
 		return final_path;
 	}
 	else
-		exit(1);
+		exit(1); // exit - fail
 }
-/*
-void determineTieBreak(Node* start, Node* finish) {
-	float x = start->pos.X - finish->pos.X;
-	float y = start->pos.Y - finish->pos.Y;
-	float z = start->pos.Z - finish->pos.Z;
 
-	int tieBreak = 0;
-
-	if (abs(x) > tieBreak)
-		TB = TB_X;
-
-	if (abs(y) > tieBreak)
-		TB = TB_Y;
-
-	if (abs(z) > tieBreak)
-		TB = TB_Z;
-}
-*/
+// calculate the f, g, h values of the current nodes being examined (to_node)
 void analyseNode(Node* to_node, Node* current, int current_edge, Node* target) {
 	to_node->h = to_node->pos.getDistanceFrom(target->pos);
 	to_node->g = current->g + current->edges[current_edge].cost;
 	to_node->f = to_node->h + to_node->g;
 }
 
+// function to iterate over all the nodes and work out the best path to take from start to finish nodes
 int aStar(std::map<Node*, Node*>* open_list, std::map<Node*, Node*>* closed_list, Node* current, Node* target) {
 
 	for (int i = 0; i < EDGES; i++)
@@ -485,6 +479,7 @@ int aStar(std::map<Node*, Node*>* open_list, std::map<Node*, Node*>* closed_list
 	aStar(open_list, closed_list, nextNode(open_list, target), target);
 }
 
+// determines the next best node to hop to based on their f score
 Node* nextNode(std::map<Node*, Node*>* open_list, Node* target) {
 	assert((*open_list).size() > 0);
 	// TODO check for empty open list 
@@ -493,12 +488,26 @@ Node* nextNode(std::map<Node*, Node*>* open_list, Node* target) {
 		if (it->first->f < lowest_score->f)
 			lowest_score = it->first;
 	}
-	return lowest_score;
+	return lowest_score; // the node with the lowest f score
 }
 
+// DEBUG: print out the path calculated
 void printPath(Node* origin, Node* node_ptr, vector<Node*> path) {
 	
 	for (int i = 0; i < path.size(); i++){
 		cout << i << endl;
 	}
+}
+
+// request the start and finish node from the user
+void getInput() {
+	int s;
+	int f;
+	cout << "Please enter an start node (between 0 and 59): ";
+	cin >> s;
+	cout << "Please enter an end node (between 0 and 59): ";
+	cin >> f;
+	start = nodes[s];
+	finish = nodes[f];
+	cout << "Calculating path between Node " << s << " and Node " << f;
 }
