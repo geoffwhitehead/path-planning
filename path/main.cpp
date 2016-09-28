@@ -144,14 +144,15 @@ int main() {
 	}
 
 	// *** create the nodes
+
 	for (int i = 0; i < nodes.size(); i++)
 	{
 		// nodes
 		scene::ISceneNode* node = smgr->addSphereSceneNode(NODE_SIZE, 32, 0, i);
 		node->setPosition(nodes[i]->pos);
-		node->setMaterialTexture(0, driver->getTexture("../_resources/irrlicht-1.8.3/media/fireball.bmp"));
-		node->setMaterialFlag(video::EMF_LIGHTING, false);
-		node->setMaterialFlag(video::EMF_BLEND_OPERATION, true);
+		node->setMaterialTexture(0, driver->getTexture("../_resources/irrlicht-1.8.3/media/particle.bmp"));
+		node->setMaterialFlag(video::EMF_LIGHTING, true);
+		node->setMaterialFlag(video::EMF_BLEND_OPERATION, false);
 		node->setMaterialType((video::E_MATERIAL_TYPE)newMaterialType2);
 		
 		// node text
@@ -159,7 +160,7 @@ int main() {
 			video::SColor(255, 255, 255, 255), node, vector3df(0.0f, 0.0f, 0.4f));
 
 		 //rotation
-		scene::ISceneNodeAnimator* anim = smgr->createRotationAnimator(core::vector3df(0.0, 0.0, 0.0));
+		scene::ISceneNodeAnimator* anim = smgr->createRotationAnimator(core::vector3df(0,0, 0));
 		node->addAnimator(anim);
 		anim->drop();
 
@@ -221,7 +222,7 @@ int main() {
 				cam->setPosition(vector3df(camPosition.X -= MOVEMENT_SPEED * frameDeltaTime, camPosition.Y, camPosition.Z));
 			
 			// *** begin 
-			driver->beginScene(true, true, video::SColor(0, 100, 100, 100));
+			driver->beginScene(true, true, video::SColor(255, 255, 255, 255)); // screne colour
 			smgr->drawAll();
 			
 			driver->setTransform(ETS_WORLD, matrix4());
@@ -229,15 +230,16 @@ int main() {
 			// colour in all the edges
 			for (int i = 0; i < nodes.size(); i++) {
 				for (int j = 0; j < nodes[i]->edges.size(); j++) {
-					driver->draw3DLine(nodes[i]->pos, nodes[i]->edges[j].to_node->pos, SColor(255, 125, 20, 125));
+					driver->draw3DLine(nodes[i]->pos, nodes[i]->edges[j].to_node->pos, SColor(200, 200, 200, 125));
 				}
 			}
 			
 			// colour in all the nodes in the path
 			for (int i = 0; i < route.size(); i++) {
-				smgr->getSceneNodeFromId(route[i]->name)->setMaterialTexture(0, driver->getTexture("../_resources/irrlicht-1.8.3/media/portal2.bmp"));
-				smgr->getSceneNodeFromId(route[i]->name)->setMaterialFlag(video::EMF_BLEND_OPERATION, false);
+				smgr->getSceneNodeFromId(route[i]->name)->setMaterialFlag(video::EMF_BLEND_OPERATION, true);
 				smgr->getSceneNodeFromId(route[i]->name)->setMaterialFlag(video::EMF_LIGHTING, false);
+
+				smgr->getSceneNodeFromId(route[i]->name)->setMaterialTexture(0, driver->getTexture("../_resources/irrlicht-1.8.3/media/portal2.bmp"));
 
 			}
 			driver->endScene();
@@ -501,12 +503,18 @@ void printPath(Node* origin, Node* node_ptr, vector<Node*> path) {
 
 // request the start and finish node from the user
 void getInput() {
-	int s;
-	int f;
-	cout << "Please enter an start node (between 0 and 59): ";
-	cin >> s;
-	cout << "Please enter an end node (between 0 and 59): ";
-	cin >> f;
+	int s = -1;
+	int f = -1;
+
+	while ((s < 0 || s > 59)) {
+		cout << "Please enter an start node (between 0 and 59): ";
+		cin >> s;
+	}
+	while ((f < 0 || f > 59)) {
+		cout << "Please enter an end node (between 0 and 59): ";
+		cin >> f;
+	}
+
 	start = nodes[s];
 	finish = nodes[f];
 	cout << "Calculating path between Node " << s << " and Node " << f;
