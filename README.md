@@ -11,7 +11,6 @@ Clone and run in visual studio.
 Run the project. Choose a path using the console dialog. The path taken is shown by the light coloured nodes.
 
 ## Screenshots
-Demo
 ![path planning visualisation](./1.png)
 ## Built With
 
